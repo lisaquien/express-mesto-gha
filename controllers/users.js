@@ -17,14 +17,12 @@ module.exports.getUserById = (req, res, next) => {
   const { userId } = req.params;
 
   User.findById({ _id: userId })
+    .orFail(new Error)
     .then(user => res.send({ data: user }))
     .catch(err => {
-      if (err.message &&
-           (
-             ~err.message.indexOf('Cast to ObjectId failed' ||
-             ~err.message.indexOf('not found'))
-           )
-         ) {
+      if (err.name === 'CastError') {
+        res.status(INCORRECT_DATA_ERROR_CODE).send({ message: 'Данные вводятся некорректно' });
+      } else if (err.name === 'Error') {
         res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Запрашиваемый пользователь не найден' })
       } else {
         res.status(INTERNAL_ERROR_CODE).send({ message: 'Внутренняя ошибка сервера' })
@@ -37,7 +35,7 @@ module.exports.createUser = (req, res, next) => {
   User.create({ name, about, avatar })
     .then(newUser => res.status(CREATED_CODE).send({ newUser }))
     .catch(err => {
-      if(typeof name !== 'string' || about !== 'string' || avatar !== 'string' ) {
+      if(err.name === 'ValidationError') {
         res.status(INCORRECT_DATA_ERROR_CODE).send({ message: 'Данные вводятся некорректно' });
       } else {
         res.status(INTERNAL_ERROR_CODE).send({ message: 'Внутренняя ошибка сервера' })
@@ -60,18 +58,13 @@ module.exports.updateMyProfile = (req, res, next) => {
   )
     .then(updUser => res.status(OK_CODE).send({ data: updUser }))
     .catch(err => {
-      if (err.message &&
-           (
-             ~err.message.indexOf('Cast to ObjectId failed' ||
-             ~err.message.indexOf('not found'))
-           )
-         ) {
-        res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Запрашиваемый пользователь не найден' })
-      } else if (typeof name !== 'string' || about !== 'string' ) {
+      if (err.name === 'ValidationError') {
         res.status(INCORRECT_DATA_ERROR_CODE).send({ message: 'Данные вводятся некорректно' });
       } else {
         res.status(INTERNAL_ERROR_CODE).send({ message: 'Внутренняя ошибка сервера' })
-      }})
+      }
+      next(err);
+    })
 }
 
 module.exports.updateMyAvatar = (req, res, next) => {
@@ -89,16 +82,12 @@ module.exports.updateMyAvatar = (req, res, next) => {
   )
     .then(updAvatar => res.status(OK_CODE).send({ data: updAvatar }))
     .catch(err => {
-      if (err.message &&
-           (
-             ~err.message.indexOf('Cast to ObjectId failed' ||
-             ~err.message.indexOf('not found'))
-           )
-         ) {
-        res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Запрашиваемый пользователь не найден' })
-      } else if (typeof avatar !== 'string' ) {
+      if (err.name === 'ValidationError') {
         res.status(INCORRECT_DATA_ERROR_CODE).send({ message: 'Данные вводятся некорректно' });
       } else {
         res.status(INTERNAL_ERROR_CODE).send({ message: 'Внутренняя ошибка сервера' })
-      }})
+      }
+
+      next(err);
+    })
 }

@@ -23,6 +23,10 @@ app.use((req, res, next) => {
 app.use('/users', userRouter);
 app.use('/cards', cardRouter);
 
+app.use((req, res, next) => {
+  res.status(404).send({ message: 'Запрос не может быть выполнен' })
+})
+
 app.listen(PORT, () => {
   console.log(`апп слушает на порту ${PORT}`);
 });
