@@ -30,17 +30,25 @@ module.exports.createCard = (req, res, next) => {
 
 module.exports.deleteCardById = (req, res, next) => {
   const { cardId } = req.params;
+  const ownerId = req.user._id;
 
-  Card.findByIdAndRemove({ _id: cardId })
-    .orFail(new Error())
-    .then((deletedCard) => res.status(OK_CODE).send({ deletedCard }))
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        res.status(INCORRECT_DATA_ERROR_CODE).send({ message: 'Данные вводятся некорректно' });
-      } else if (err.name === 'Error') {
-        res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Запрашиваемая карточка не найдена' });
+  Card.findById({ _id: cardId })
+    .then((data) => {
+      if (String(data.owner) !== ownerId) {
+        res.status(404).send({ message: 'get your hands off' });
       } else {
-        res.status(INTERNAL_ERROR_CODE).send({ message: 'Внутренняя ошибка сервера' });
+        Card.findByIdAndRemove({ _id: cardId })
+          .orFail(new Error())
+          .then((deletedCard) => res.status(OK_CODE).send({ deletedCard }))
+          .catch((err) => {
+            if (err.name === 'CastError') {
+              res.status(INCORRECT_DATA_ERROR_CODE).send({ message: 'Данные вводятся некорректно' });
+            } else if (err.name === 'Error') {
+              res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Запрашиваемая карточка не найдена' });
+            } else {
+              res.status(INTERNAL_ERROR_CODE).send({ message: 'Внутренняя ошибка сервера' });
+            }
+          });
       }
     });
 };

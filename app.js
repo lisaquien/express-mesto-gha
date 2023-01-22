@@ -5,6 +5,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const userRouter = require('./routes/users');
 const cardRouter = require('./routes/cards');
+const { createUser, login } = require('./controllers/users');
 
 const { PORT = 3000 } = process.env;
 
@@ -24,18 +25,13 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 mongoose.connect('mongodb://localhost:27017/mestodb');
 
-app.use((req, res, next) => {
-  req.user = {
-    _id: '63a44a95492110b597e368cb',
-  };
-
-  next();
-});
+app.post('/signin', login);
+app.post('/signup', createUser);
 app.use('/users', userRouter);
 app.use('/cards', cardRouter);
 
-app.use((req, res, next) => {
-  res.status(404).send({ message: 'Запрос не может быть выполнен' });
+app.use((err, req, res, next) => {
+  res.status(404).send({ message: err.message });
 });
 
 app.listen(PORT, () => {
