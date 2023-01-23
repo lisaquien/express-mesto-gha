@@ -1,16 +1,19 @@
 const Card = require('../models/card');
+const ServerError = require('../errors/ServerError');
+const NotFoundError = require('../errors/NotFoundError');
+const BadRequestError = require('../errors/BadRequestError');
+const ForbiddenError = require('../errors/ForbiddenError');
 const {
   OK_CODE,
   CREATED_CODE,
-  INCORRECT_DATA_ERROR_CODE,
-  NOT_FOUND_ERROR_CODE,
-  INTERNAL_ERROR_CODE,
 } = require('../constants');
 
 module.exports.getAllCards = (req, res, next) => {
   Card.find({})
     .then((cards) => res.send({ data: cards }))
-    .catch((err) => res.status(INTERNAL_ERROR_CODE).send({ message: 'Внутренняя ошибка сервера' }));
+    .catch((err) => {
+      next(new ServerError('Внутренняя ошибка сервера'));
+    });
 };
 
 module.exports.createCard = (req, res, next) => {
@@ -21,10 +24,11 @@ module.exports.createCard = (req, res, next) => {
     .then((newCard) => res.status(CREATED_CODE).send({ data: newCard }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(INCORRECT_DATA_ERROR_CODE).send({ message: 'Данные вводятся некорректно' });
+        next(new BadRequestError('Данные вводятся некорректно'));
       } else {
-        res.status(INTERNAL_ERROR_CODE).send({ message: 'Внутренняя ошибка сервера' });
+        next(new ServerError('Внутренняя ошибка сервера'));
       }
+      next(err);
     });
 };
 
@@ -35,19 +39,20 @@ module.exports.deleteCardById = (req, res, next) => {
   Card.findById({ _id: cardId })
     .then((data) => {
       if (String(data.owner) !== ownerId) {
-        res.status(404).send({ message: 'get your hands off' });
+        next(new ForbiddenError('Невозможно удалить карточку другого пользователя'));
       } else {
         Card.findByIdAndRemove({ _id: cardId })
           .orFail(new Error())
           .then((deletedCard) => res.status(OK_CODE).send({ deletedCard }))
           .catch((err) => {
             if (err.name === 'CastError') {
-              res.status(INCORRECT_DATA_ERROR_CODE).send({ message: 'Данные вводятся некорректно' });
+              next(new BadRequestError('Данные вводятся некорректно'));
             } else if (err.name === 'Error') {
-              res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Запрашиваемая карточка не найдена' });
+              next(new NotFoundError('Запрашиваемая карточка не найдена'));
             } else {
-              res.status(INTERNAL_ERROR_CODE).send({ message: 'Внутренняя ошибка сервера' });
+              next(new ServerError('Внутренняя ошибка сервера'));
             }
+            next(err);
           });
       }
     });
@@ -70,12 +75,13 @@ module.exports.likeCard = (req, res, next) => {
     .then((likedCard) => res.status(OK_CODE).send({ likedCard }))
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(INCORRECT_DATA_ERROR_CODE).send({ message: 'Данные вводятся некорректно' });
+        next(new BadRequestError('Данные вводятся некорректно'));
       } else if (err.name === 'Error') {
-        res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Запрашиваемая карточка не найдена' });
+        next(new NotFoundError('Запрашиваемая карточка не найдена'));
       } else {
-        res.status(INTERNAL_ERROR_CODE).send({ message: 'Внутренняя ошибка сервера' });
+        next(new ServerError('Внутренняя ошибка сервера'));
       }
+      next(err);
     });
 };
 
@@ -96,11 +102,12 @@ module.exports.dislikeCard = (req, res, next) => {
     .then((cardLikes) => res.status(OK_CODE).send({ data: cardLikes }))
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(INCORRECT_DATA_ERROR_CODE).send({ message: 'Данные вводятся некорректно' });
+        next(new BadRequestError('Данные вводятся некорректно'));
       } else if (err.name === 'Error') {
-        res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Запрашиваемая карточка не найдена' });
+        next(new NotFoundError('Запрашиваемая карточка не найдена'));
       } else {
-        res.status(INTERNAL_ERROR_CODE).send({ message: 'Внутренняя ошибка сервера' });
+        next(new ServerError('Внутренняя ошибка сервера'));
       }
+      next(err);
     });
 };

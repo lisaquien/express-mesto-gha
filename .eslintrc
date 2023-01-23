@@ -3,6 +3,7 @@
   "rules": {
     "no-underscore-dangle": ["error", { "allow": ["_id"] }],
     "no-unused-vars": ["off", { "varsIgnorePattern": ["err", "next"] }],
-    "consistent-return": ["off", { "treatUndefinedAsUnspecified": true }]
+    "consistent-return": ["off", { "treatUndefinedAsUnspecified": true }],
+    "no-useless-escape": "off"
   }
 }
