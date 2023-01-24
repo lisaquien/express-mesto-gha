@@ -28,7 +28,12 @@ module.exports.createUser = (req, res, next) => {
       email,
       password: hash,
     }))
-    .then((newUser) => res.status(CREATED_CODE).send({ newUser }))
+    .then((newUser) => res.status(CREATED_CODE).send({
+      name,
+      about,
+      avatar,
+      email,
+    }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
         next(new BadRequestError('Данные вводятся некорректно'));
@@ -57,7 +62,7 @@ module.exports.login = (req, res, next) => {
       if (err.code === 11000) {
         next(new ConflictError('Пользователь с таким e-mail уже существует, воспользуйтесь другим'));
       } else {
-        next(new BadRequestError('Почта или пароль введены некорректно'));
+        next(new UnauthorizedError('Почта или пароль введены некорректно'));
       }
       next(err);
     });
