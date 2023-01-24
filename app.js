@@ -14,7 +14,7 @@ const app = express();
 
 const limiter = rateLimit({
   windowMs: 10 * 60 * 1000,
-  max: 50,
+  max: 150,
   message: 'Количество запросов превышено, попробуйте повторить запрос позднее',
 });
 
