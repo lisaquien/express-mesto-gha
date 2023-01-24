@@ -10,7 +10,7 @@ const {
 
 module.exports.getAllCards = (req, res, next) => {
   Card.find({})
-    .then((cards) => res.send({ data: cards }))
+    .then((cards) => res.send({ cards }))
     .catch((err) => {
       next(new ServerError('Внутренняя ошибка сервера'));
     });
@@ -21,7 +21,7 @@ module.exports.createCard = (req, res, next) => {
   const ownerId = req.user._id;
 
   Card.create({ name, link, owner: ownerId })
-    .then((newCard) => res.status(CREATED_CODE).send({ data: newCard }))
+    .then((newCard) => res.status(CREATED_CODE).send({ newCard }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
         next(new BadRequestError('Данные вводятся некорректно'));
@@ -99,7 +99,7 @@ module.exports.dislikeCard = (req, res, next) => {
       select: 'name about avatar',
     })
     .orFail(new Error())
-    .then((cardLikes) => res.status(OK_CODE).send({ data: cardLikes }))
+    .then((dislikedCard) => res.status(OK_CODE).send({ dislikedCard }))
     .catch((err) => {
       if (err.name === 'CastError') {
         next(new BadRequestError('Данные вводятся некорректно'));

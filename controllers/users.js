@@ -29,10 +29,11 @@ module.exports.createUser = (req, res, next) => {
       password: hash,
     }))
     .then((newUser) => res.status(CREATED_CODE).send({
-      name,
-      about,
-      avatar,
-      email,
+      _id: newUser._id,
+      name: newUser.name,
+      about: newUser.about,
+      avatar: newUser.avatar,
+      email: newUser.email,
     }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
@@ -81,7 +82,7 @@ module.exports.getAllUsers = (req, res, next) => {
           _id, name, about, avatar, email,
         };
       }
-      res.send({ usersList });
+      res.status(OK_CODE).send({ usersList });
     })
     .catch((err) => {
       next(new ServerError('Внутренняя ошибка сервера'));
@@ -117,7 +118,7 @@ module.exports.getUserById = (req, res, next) => {
 
   User.findById({ _id: userId }).select('+password')
     .orFail(new Error())
-    .then((user) => res.send({
+    .then((user) => res.status(OK_CODE).send({
       _id: user._id,
       name: user.name,
       about: user.about,
@@ -192,7 +193,6 @@ module.exports.updateMyAvatar = (req, res, next) => {
       } else {
         next(new ServerError('Внутренняя ошибка сервера'));
       }
-
       next(err);
     });
 };
