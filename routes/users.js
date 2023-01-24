@@ -13,7 +13,11 @@ userRouter.get('/', auth, getAllUsers);
 
 userRouter.get('/me', auth, getMyInfo);
 
-userRouter.get('/:userId', auth, getUserById);
+userRouter.get('/:userId', auth, celebrate({
+  params: Joi.object().keys({
+    userId: Joi.string().alphanum().length(24),
+  }).unknown(true),
+}), getUserById);
 
 userRouter.patch('/me', auth, celebrate({
   body: Joi.object().keys({

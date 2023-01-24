@@ -49,7 +49,7 @@ app.use(errors());
 app.use((err, req, res, next) => {
   const { statusCode = 500, message } = err;
 
-  res.status(statusCode).send({
+  res.send({
     message: statusCode === 500
       ? 'Произошла внутренняя ошибка сервера, запрос не может быть выполнен'
       : message,
