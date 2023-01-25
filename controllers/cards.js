@@ -1,5 +1,4 @@
 const Card = require('../models/card');
-const ServerError = require('../errors/ServerError');
 const NotFoundError = require('../errors/NotFoundError');
 const BadRequestError = require('../errors/BadRequestError');
 const ForbiddenError = require('../errors/ForbiddenError');
@@ -7,7 +6,6 @@ const {
   OK_CODE,
   CREATED_CODE,
 } = require('../utils/constants');
-const UnauthorizedError = require('../errors/UnauthorizedError');
 
 module.exports.getAllCards = (req, res, next) => {
   Card.find({})
@@ -25,7 +23,7 @@ module.exports.createCard = (req, res, next) => {
       if (err.name === 'ValidationError') {
         next(new BadRequestError('Данные вводятся некорректно'));
       } else {
-        next(new ServerError('Внутренняя ошибка сервера'));
+        next(err);
       }
     });
 };
@@ -75,7 +73,7 @@ module.exports.likeCard = (req, res, next) => {
       } else if (err.name === 'DocumentNotFoundError') {
         next(new NotFoundError('Запрашиваемая карточка не найдена'));
       } else {
-        next(new ServerError('Внутренняя ошибка сервера'));
+        next(err);
       }
     });
 };
@@ -93,15 +91,15 @@ module.exports.dislikeCard = (req, res, next) => {
       path: 'likes',
       select: 'name about avatar',
     })
-    .orFail(new Error())
+    .orFail()
     .then((dislikedCard) => res.status(OK_CODE).send({ dislikedCard }))
     .catch((err) => {
       if (err.name === 'CastError') {
         next(new BadRequestError('Данные вводятся некорректно'));
-      } else if (err.name === 'Error') {
+      } else if (err.name === 'DocumentNotFoundError') {
         next(new NotFoundError('Запрашиваемая карточка не найдена'));
       } else {
-        next(new ServerError('Внутренняя ошибка сервера'));
+        next(err);
       }
     });
 };

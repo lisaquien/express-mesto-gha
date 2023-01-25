@@ -1,9 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const ServerError = require('../errors/ServerError');
 const NotFoundError = require('../errors/NotFoundError');
 const BadRequestError = require('../errors/BadRequestError');
-const UnauthorizedError = require('../errors/UnauthorizedError');
 const ConflictError = require('../errors/ConflictError');
 const User = require('../models/user');
 const {
@@ -41,7 +39,7 @@ module.exports.createUser = (req, res, next) => {
       } else if (err.code === 11000) {
         next(new ConflictError('Пользователь с таким e-mail уже существует, воспользуйтесь другим'));
       } else {
-        next(new ServerError('Внутренняя ошибка сервера'));
+        next(err);
       }
     });
 };
@@ -64,24 +62,22 @@ module.exports.login = (req, res, next) => {
 module.exports.getAllUsers = (req, res, next) => {
   User.find({})
     .then((allUsers) => res.status(OK_CODE).send({ allUsers }))
-    .catch((err) => {
-      next(new ServerError('Внутренняя ошибка сервера'));
-    });
+    .catch(next);
 };
 
 module.exports.getMyInfo = (req, res, next) => {
   const ownerId = req.user._id;
 
   User.findOne({ _id: ownerId })
-    .orFail(new Error())
+    .orFail()
     .then((myInfo) => res.status(OK_CODE).send({ myInfo }))
     .catch((err) => {
       if (err.name === 'CastError') {
         next(new BadRequestError('Данные вводятся некорректно'));
-      } else if (err.name === 'Error') {
+      } else if (err.name === 'DocumentNotFoundError') {
         next(new NotFoundError('Запрашиваемый пользователь не найден'));
       } else {
-        next(new ServerError('Внутренняя ошибка сервера'));
+        next(err);
       }
     });
 };
@@ -90,15 +86,15 @@ module.exports.getUserById = (req, res, next) => {
   const { userId } = req.params;
 
   User.findById({ _id: userId })
-    .orFail(new Error())
+    .orFail()
     .then((user) => res.status(OK_CODE).send({ user }))
     .catch((err) => {
       if (err.name === 'CastError') {
         next(new BadRequestError('Данные вводятся некорректно'));
-      } else if (err.name === 'Error') {
+      } else if (err.name === 'DocumentNotFoundError') {
         next(new NotFoundError('Запрашиваемый пользователь не найден'));
       } else {
-        next(new ServerError('Внутренняя ошибка сервера'));
+        next(err);
       }
     });
 };
@@ -121,7 +117,7 @@ module.exports.updateMyProfile = (req, res, next) => {
       if (err.name === 'ValidationError') {
         next(new BadRequestError('Данные вводятся некорректно'));
       } else {
-        next(new ServerError('Внутренняя ошибка сервера'));
+        next(err);
       }
     });
 };
