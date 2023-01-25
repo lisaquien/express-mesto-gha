@@ -6,14 +6,13 @@ const ForbiddenError = require('../errors/ForbiddenError');
 const {
   OK_CODE,
   CREATED_CODE,
-} = require('../constants');
+} = require('../utils/constants');
+const UnauthorizedError = require('../errors/UnauthorizedError');
 
 module.exports.getAllCards = (req, res, next) => {
   Card.find({})
     .then((cards) => res.send({ cards }))
-    .catch((err) => {
-      next(new ServerError('Внутренняя ошибка сервера'));
-    });
+    .catch(next);
 };
 
 module.exports.createCard = (req, res, next) => {
@@ -28,7 +27,6 @@ module.exports.createCard = (req, res, next) => {
       } else {
         next(new ServerError('Внутренняя ошибка сервера'));
       }
-      next(err);
     });
 };
 
@@ -44,18 +42,14 @@ module.exports.deleteCardById = (req, res, next) => {
         next(new ForbiddenError('Невозможно удалить карточку другого пользователя'));
       } else {
         Card.findByIdAndRemove({ _id: cardId })
-          .orFail(new Error())
-          .then((deletedCard) => res.status(OK_CODE).send({ deletedCard }))
-          .catch((err) => {
-            if (err.name === 'CastError') {
-              next(new BadRequestError('Данные вводятся некорректно'));
-            } else if (err.name === 'Error') {
-              next(new NotFoundError('Запрашиваемая карточка не найдена'));
-            } else {
-              next(new ServerError('Внутренняя ошибка сервера'));
-            }
-            next(err);
-          });
+          .then((deletedCard) => res.status(OK_CODE).send({ deletedCard }));
+      }
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new BadRequestError('Данные вводятся некорректно'));
+      } else {
+        next(err);
       }
     });
 };
@@ -73,17 +67,16 @@ module.exports.likeCard = (req, res, next) => {
       path: 'likes',
       select: 'name about avatar',
     })
-    .orFail(new Error())
+    .orFail()
     .then((likedCard) => res.status(OK_CODE).send({ likedCard }))
     .catch((err) => {
       if (err.name === 'CastError') {
         next(new BadRequestError('Данные вводятся некорректно'));
-      } else if (err.name === 'Error') {
+      } else if (err.name === 'DocumentNotFoundError') {
         next(new NotFoundError('Запрашиваемая карточка не найдена'));
       } else {
         next(new ServerError('Внутренняя ошибка сервера'));
       }
-      next(err);
     });
 };
 
@@ -110,6 +103,5 @@ module.exports.dislikeCard = (req, res, next) => {
       } else {
         next(new ServerError('Внутренняя ошибка сервера'));
       }
-      next(err);
     });
 };

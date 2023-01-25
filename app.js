@@ -7,6 +7,9 @@ const rateLimit = require('express-rate-limit');
 const userRouter = require('./routes/users');
 const cardRouter = require('./routes/cards');
 const { createUser, login } = require('./controllers/users');
+const urlRegex = require('./utils/regex');
+const wrongRoute = require('./middlewares/wrongRoute');
+const errorHandler = require('./middlewares/errorHandler');
 
 const { PORT = 3000 } = process.env;
 
@@ -36,7 +39,7 @@ app.post('/signup', celebrate({
   body: Joi.object().keys({
     name: Joi.string().min(2).max(30),
     about: Joi.string().min(2).max(30),
-    avatar: Joi.string().pattern(/https?\:\/\/(www\.)?[\w\-\.\~\:\/\?\#\[\]\@\!\$\&\'\(\)\*\+\,\;\=]($\#)?/),
+    avatar: Joi.string().pattern(new RegExp(urlRegex)),
     email: Joi.string().required().email(),
     password: Joi.string().required(),
   }),
@@ -44,17 +47,11 @@ app.post('/signup', celebrate({
 app.use('/users', userRouter);
 app.use('/cards', cardRouter);
 
+app.use(wrongRoute);
+
 app.use(errors());
 
-app.use((err, req, res, next) => {
-  const { statusCode = 500, message } = err;
-
-  res.status(statusCode).send({
-    message: statusCode === 500
-      ? 'Произошла внутренняя ошибка сервера, запрос не может быть выполнен'
-      : message,
-  });
-});
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`апп слушает на порту ${PORT}`);

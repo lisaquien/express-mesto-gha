@@ -9,7 +9,7 @@ const User = require('../models/user');
 const {
   OK_CODE,
   CREATED_CODE,
-} = require('../constants');
+} = require('../utils/constants');
 
 module.exports.createUser = (req, res, next) => {
   const {
@@ -43,7 +43,6 @@ module.exports.createUser = (req, res, next) => {
       } else {
         next(new ServerError('Внутренняя ошибка сервера'));
       }
-      next(err);
     });
 };
 
@@ -59,31 +58,12 @@ module.exports.login = (req, res, next) => {
       );
       return res.send({ token });
     })
-    .catch((err) => {
-      if (err.code === 11000) {
-        next(new ConflictError('Пользователь с таким e-mail уже существует, воспользуйтесь другим'));
-      } else {
-        next(new UnauthorizedError('Почта или пароль введены некорректно'));
-      }
-      next(err);
-    });
+    .catch(next);
 };
 
 module.exports.getAllUsers = (req, res, next) => {
-  User.find({}).select('+password')
-    .then((allUsers) => {
-      const usersList = [];
-      for (let i = 0; i < allUsers.length; i += 1) {
-        const {
-          _id, name, about, avatar, email,
-        } = allUsers[i];
-
-        usersList[i] = {
-          _id, name, about, avatar, email,
-        };
-      }
-      res.status(OK_CODE).send({ usersList });
-    })
+  User.find({})
+    .then((allUsers) => res.status(OK_CODE).send({ allUsers }))
     .catch((err) => {
       next(new ServerError('Внутренняя ошибка сервера'));
     });
@@ -92,15 +72,9 @@ module.exports.getAllUsers = (req, res, next) => {
 module.exports.getMyInfo = (req, res, next) => {
   const ownerId = req.user._id;
 
-  User.findOne({ _id: ownerId }).select('+password')
+  User.findOne({ _id: ownerId })
     .orFail(new Error())
-    .then((myInfo) => res.status(OK_CODE).send({
-      _id: myInfo._id,
-      name: myInfo.name,
-      about: myInfo.about,
-      avatar: myInfo.avatar,
-      email: myInfo.email,
-    }))
+    .then((myInfo) => res.status(OK_CODE).send({ myInfo }))
     .catch((err) => {
       if (err.name === 'CastError') {
         next(new BadRequestError('Данные вводятся некорректно'));
@@ -109,22 +83,15 @@ module.exports.getMyInfo = (req, res, next) => {
       } else {
         next(new ServerError('Внутренняя ошибка сервера'));
       }
-      next(err);
     });
 };
 
 module.exports.getUserById = (req, res, next) => {
   const { userId } = req.params;
 
-  User.findById({ _id: userId }).select('+password')
+  User.findById({ _id: userId })
     .orFail(new Error())
-    .then((user) => res.status(OK_CODE).send({
-      _id: user._id,
-      name: user.name,
-      about: user.about,
-      avatar: user.avatar,
-      email: user.email,
-    }))
+    .then((user) => res.status(OK_CODE).send({ user }))
     .catch((err) => {
       if (err.name === 'CastError') {
         next(new BadRequestError('Данные вводятся некорректно'));
@@ -133,7 +100,6 @@ module.exports.getUserById = (req, res, next) => {
       } else {
         next(new ServerError('Внутренняя ошибка сервера'));
       }
-      next(err);
     });
 };
 
@@ -149,21 +115,14 @@ module.exports.updateMyProfile = (req, res, next) => {
       runValidators: true,
       upsert: false,
     },
-  ).select('+password')
-    .then((updUser) => res.status(OK_CODE).send({
-      _id: updUser._id,
-      name: updUser.name,
-      about: updUser.about,
-      avatar: updUser.avatar,
-      email: updUser.email,
-    }))
+  )
+    .then((updUser) => res.status(OK_CODE).send({ updUser }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
         next(new BadRequestError('Данные вводятся некорректно'));
       } else {
         next(new ServerError('Внутренняя ошибка сервера'));
       }
-      next(err);
     });
 };
 
@@ -179,20 +138,13 @@ module.exports.updateMyAvatar = (req, res, next) => {
       runValidators: true,
       upsert: false,
     },
-  ).select('+password')
-    .then((updAvatar) => res.status(OK_CODE).send({
-      _id: updAvatar._id,
-      name: updAvatar.name,
-      about: updAvatar.about,
-      avatar: updAvatar.avatar,
-      email: updAvatar.email,
-    }))
+  )
+    .then((updAvatar) => res.status(OK_CODE).send({ updAvatar }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
         next(new BadRequestError('Данные вводятся некорректно'));
       } else {
-        next(new ServerError('Внутренняя ошибка сервера'));
+        next(err);
       }
-      next(err);
     });
 };
